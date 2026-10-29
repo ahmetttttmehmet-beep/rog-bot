@@ -39,13 +39,16 @@ const kufurler = [
     "amina", "amina koyim", "kahpe", "ibne", "salak", "oç"
 ];
 
-const TICKET_KANAL_ID = process.env.TICKET_KANAL_ID || "1564274342299443210";
-const GIRIS_CIKIS_KANAL_ID = process.env.GIRIS_CIKIS_KANAL_ID || "1564274316315594892";
+// --- KANAL, ROL VE KATEGORİ ID'LERİ ---
+const TICKET_KANAL_ID = "1564274342299443210";       // Panelinin atılacağı kanal ID'si
+const GIRIS_CIKIS_KANAL_ID = "1564274316315594892";           // Giriş çıkış log kanal ID'si
+const PARTNER_KANAL_ID = "1564274339606564985"; // Onaylanan partnerliklerin gideceği kanal ID'si
+const OTO_ROL_ID = "1564274286800273438";               // Otomatik verilecek rol ID'si
+const TICKET_KATEGORI_ID = "1564274304160628808"; // Ticket'ların açılacağı ortak kategori ID'si
 
 client.once('ready', async () => {
     console.log(`${client.user.tag} başarıyla giriş yaptı!`);
 
-    // Slash Komutlarını Kaydetme
     const commands = [
         {
             name: 'cekilis',
@@ -53,13 +56,13 @@ client.once('ready', async () => {
             options: [
                 {
                     name: 'odul',
-                    type: 3, // String type
+                    type: 3,
                     description: 'Çekiliş ödülü nedir?',
                     required: true
                 },
                 {
                     name: 'sure',
-                    type: 4, // Integer type
+                    type: 4,
                     description: 'Süre (Dakika cinsinden)',
                     required: true
                 }
@@ -74,25 +77,30 @@ client.once('ready', async () => {
     await client.application.commands.set(commands);
     console.log('Komutlar başarıyla yüklendi!');
 
-    // Otomatik Ticket Paneli Gönderme
+    // 5 Butonlu Otomatik Mor Ticket Paneli Gönderme
     try {
         const kanal = await client.channels.fetch(TICKET_KANAL_ID);
         if (kanal) {
             const embed = new EmbedBuilder()
-                .setTitle('Destek Merkezi')
-                .setDescription('Bir sorunla karşılaştıysanız veya yardıma ihtiyacınız varsa aşağıdaki **"Destek Talebi Aç"** butonuna tıklayabilirsiniz.')
-                .setColor(0x5865F2);
+                .setTitle('💜 Destek ve İletişim Merkezi')
+                .setDescription('Aşağıdaki butonları kullanarak ihtiyacınıza uygun kategoride talep açabilirsiniz.\n\n' +
+                    '👥 **Ekip Alım:** Ekibimize katılmak için\n' +
+                    '🤝 **Partnerlik:** Partnerlik talepleri için\n' +
+                    '🎫 **Genel Destek:** Sorun ve yardım talepleri için\n' +
+                    '📢 **Reklam:** Reklam ve iş birliği için\n' +
+                    '⚔️ **Ally/Merge:** Müttefiklik ve birleşme talepleri için')
+                .setColor(0x9B59B6);
 
             const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('create_ticket')
-                    .setLabel('Destek Talebi Aç')
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji('🎫')
+                new ButtonBuilder().setCustomId('create_ekip').setLabel('Ekip Alım').setStyle(ButtonStyle.Primary).setEmoji('👥'),
+                new ButtonBuilder().setCustomId('create_partner').setLabel('Partnerlik').setStyle(ButtonStyle.Secondary).setEmoji('🤝'),
+                new ButtonBuilder().setCustomId('create_destek').setLabel('Genel Destek').setStyle(ButtonStyle.Success).setEmoji('🎫'),
+                new ButtonBuilder().setCustomId('create_reklam').setLabel('Reklam').setStyle(ButtonStyle.Secondary).setEmoji('📢'),
+                new ButtonBuilder().setCustomId('create_ally').setLabel('Ally/Merge').setStyle(ButtonStyle.Primary).setEmoji('⚔️')
             );
 
             await kanal.send({ embeds: [embed], components: [row] });
-            console.log('Otomatik Ticket Paneli Kanalda Yayınlandı!');
+            console.log('5 Butonlu Mor Ticket Paneli Yayınlandı!');
         }
     } catch (err) {
         console.error("Otomatik ticket paneli gönderilemedi:", err);
@@ -123,17 +131,14 @@ client.on('messageCreate', async (message) => {
 // 4. OTOROL VE GİRİŞ-ÇIKIŞ SİSTEMİ
 // ==========================================
 client.on('guildMemberAdd', async (member) => {
-    // Otomatik Rol Verme
-    const OTO_ROL_ID = 1564274286800273438;
-    if (OTO_ROL_ID) {
+    if (OTO_ROL_ID && OTO_ROL_ID !== "OTO_ROL_ID_BURAYA") {
         const rol = member.guild.roles.cache.get(OTO_ROL_ID);
         if (rol) {
             await member.roles.add(rol).catch(err => console.error("Otorol verilemedi:", err));
         }
     }
 
-    // Giriş Log Mesajı (Normal)
-    if (GIRIS_CIKIS_KANAL_ID && GIRIS_CIKIS_KANAL_ID !== "1564274316315594892") {
+    if (GIRIS_CIKIS_KANAL_ID && GIRIS_CIKIS_KANAL_ID !== "GIRIS_CIKIS_KANAL_ID_BURAYA") {
         try {
             const kanal = await member.guild.channels.fetch(GIRIS_CIKIS_KANAL_ID);
             if (kanal) {
@@ -151,7 +156,6 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 client.on('guildMemberRemove', async (member) => {
-    // Çıkış Log Mesajı (Normal)
     if (GIRIS_CIKIS_KANAL_ID && GIRIS_CIKIS_KANAL_ID !== "GIRIS_CIKIS_KANAL_ID_BURAYA") {
         try {
             const kanal = await member.guild.channels.fetch(GIRIS_CIKIS_KANAL_ID);
@@ -170,12 +174,12 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 // ==========================================
-// 5. SLASH KOMUTLARI YÖNETİMİ (Çekiliş, Sestop)
+// 5. SLASH KOMUTLARI (Çekiliş, Sestop)
 // ==========================================
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    const { commandName, options, guild, member } = interaction;
+    const { commandName, options, member } = interaction;
 
     if (commandName === 'cekilis') {
         if (!member.permissions.has(PermissionFlagsBits.ManageGuild)) {
@@ -192,11 +196,7 @@ client.on('interactionCreate', async (interaction) => {
             .setColor(0xFEE75C);
 
         const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('join_giveaway')
-                .setLabel('Çekilişe Katıl')
-                .setStyle(ButtonStyle.Success)
-                .setEmoji('🎉')
+            new ButtonBuilder().setCustomId('join_giveaway').setLabel('Çekilişe Katıl').setStyle(ButtonStyle.Success).setEmoji('🎉')
         );
 
         const mesaj = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
@@ -241,64 +241,103 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ==========================================
-// 6. GİZLİ TİCKET SİSTEMİ
+// 6. KATEGORİ ID İLE TİCKET, PARTNERLİK YÖNETİMİ
 // ==========================================
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isButton()) return;
 
-    if (interaction.customId === 'create_ticket') {
-        const guild = interaction.guild;
-        const user = interaction.user;
+    const guild = interaction.guild;
+    const user = interaction.user;
+    const customId = interaction.customId;
 
-        let kategori = guild.channels.cache.find(c => c.name === 'DESTEK TALEPLERİ' && c.type === ChannelType.GuildCategory);
-        
-        if (!kategori) {
-            kategori = await guild.channels.create({
-                name: 'DESTEK TALEPLERİ',
-                type: ChannelType.GuildCategory,
-            });
+    let talepTuru = "";
+    let kanalOnek = "";
+
+    if (customId === 'create_ekip') { talepTuru = 'Ekip Alım'; kanalOnek = 'ekip'; }
+    else if (customId === 'create_partner') { talepTuru = 'Partnerlik'; kanalOnek = 'partner'; }
+    else if (customId === 'create_destek') { talepTuru = 'Genel Destek'; kanalOnek = 'destek'; }
+    else if (customId === 'create_reklam') { talepTuru = 'Reklam'; kanalOnek = 'reklam'; }
+    else if (customId === 'create_ally') { talepTuru = 'Ally/Merge'; kanalOnek = 'ally'; }
+
+    if (talepTuru !== "") {
+        let parentId = null;
+
+        // Eğer kategori ID yazıldıysa orayı kullan, yazılmadıysa isme göre bulur veya oluşturur
+        if (TICKET_KATEGORI_ID && TICKET_KATEGORI_ID !== "TICKET_KATEGORI_ID_BURAYA") {
+            parentId = TICKET_KATEGORI_ID;
+        } else {
+            let kategori = guild.channels.cache.find(c => c.name === 'DESTEK TALEPLERİ' && c.type === ChannelType.GuildCategory);
+            if (!kategori) {
+                kategori = await guild.channels.create({ name: 'DESTEK TALEPLERİ', type: ChannelType.GuildCategory });
+            }
+            parentId = kategori.id;
         }
 
         const channel = await guild.channels.create({
-            name: `ticket-${user.username}`,
+            name: `${kanalOnek}-${user.username}`,
             type: ChannelType.GuildText,
-            parent: kategori.id,
+            parent: parentId,
             permissionOverwrites: [
-                {
-                    id: guild.roles.everyone.id,
-                    deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages],
-                },
-                {
-                    id: user.id,
-                    allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
-                },
-                {
-                    id: client.user.id,
-                    allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels],
-                }
+                { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
+                { id: user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+                { id: client.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] }
             ],
         });
 
-        const embed = new EmbedBuilder()
-            .setTitle('Destek Talebi')
-            .setDescription('Yetkililer en kısa sürede sizinle ilgilenecektir. Bu kanal sadece sizinle yetkililer arasında özeldir. Kapatmak için aşağıdaki butonu kullanabilirsiniz.')
-            .setColor(0x5865F2);
+        const row = new ActionRowBuilder();
+        if (customId === 'create_partner') {
+            row.addComponents(
+                new ButtonBuilder().setCustomId('approve_partner').setLabel('Onaylıyorum').setStyle(ButtonStyle.Success).setEmoji('✅'),
+                new ButtonBuilder().setCustomId('close_ticket').setLabel('İptal Et / Kapat').setStyle(ButtonStyle.Danger).setEmoji('🔒')
+            );
+        } else {
+            row.addComponents(
+                new ButtonBuilder().setCustomId('close_ticket').setLabel('Talebi Kapat').setStyle(ButtonStyle.Danger).setEmoji('🔒')
+            );
+        }
 
-        const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('close_ticket')
-                .setLabel('Talebi Kapat')
-                .setStyle(ButtonStyle.Danger)
-                .setEmoji('🔒')
-        );
+        const embed = new EmbedBuilder()
+            .setTitle(`💜 ${talepTuru} Talebi`)
+            .setDescription(`Merhaba <@${user.id}>, yetkililerimiz en kısa sürede seninle ilgilenecektir.\n\n*Lütfen talebinizle ilgili detaylı bilgiyi buraya yazınız.*`)
+            .setColor(0x9B59B6);
 
         await channel.send({ content: `<@${user.id}>`, embeds: [embed], components: [row] });
-        return interaction.reply({ content: `Destek kanalınız oluşturuldu: ${channel}`, ephemeral: true });
+        return interaction.reply({ content: `Talebiniz başarıyla oluşturuldu: ${channel}`, ephemeral: true });
     }
 
-    if (interaction.customId === 'close_ticket') {
+    // --- PARTNERLİK ONAYLAMA SİSTEMİ ---
+    if (customId === 'approve_partner') {
+        if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+            return interaction.reply({ content: 'Bu butonu yalnızca yetkililer kullanabilir!', ephemeral: true });
+        }
+
         const channel = interaction.channel;
-        await interaction.reply({ content: 'Talep kapatılıyor, kanal birazdan silinecek...' });
+        const messages = await channel.messages.fetch({ limit: 10 });
+        const partnerMesaji = messages.find(m => !m.author.bot);
+
+        if (!partnerMesaji) {
+            return interaction.reply({ content: 'Kanalda gönderilmiş bir partnerlik metni bulunamadı! Lütfen önce metni kanala yazın.', ephemeral: true });
+        }
+
+        if (PARTNER_KANAL_ID && PARTNER_KANAL_ID !== "PARTNER_OG_KANAL_ID_BURAYA") {
+            try {
+                const partnerKanal = await guild.channels.fetch(PARTNER_KANAL_ID);
+                if (partnerKanal) {
+                    await partnerKanal.send(`📢 **Yeni Bir Partnerlik!**\n\n${partnerMesaji.content}`);
+                }
+            } catch (err) {
+                console.error("Partner kanalına mesaj atılamadı:", err);
+            }
+        }
+
+        await interaction.reply({ content: 'Partnerlik onaylandı ve belirlenen partner kanalına gönderildi! Kanal 3 saniye içinde kapatılıyor...' });
+        setTimeout(() => channel.delete().catch(() => {}), 3000);
+    }
+
+    // --- TALEP KAPATMA ---
+    if (customId === 'close_ticket') {
+        const channel = interaction.channel;
+        await interaction.reply({ content: 'Talep kapatılıyor, kanal 3 saniye içinde silinecek...' });
         setTimeout(() => channel.delete().catch(() => {}), 3000);
     }
 });
